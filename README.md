@@ -3,7 +3,7 @@
   <br>
   <br>
   Medusa B2B Commerce Starter
-  <br>
+  <br>   
 </h1>
 
 <p align="center">Customizable B2B ecommerce built with <a href="https://medusajs.com/" target="_blank">Medusa 2.0</a> & Next.js Storefront</p>
@@ -54,6 +54,7 @@
 &nbsp;
 
 ## Overview
+
 For a full feature overview, please visit [the project wiki](https://github.com/medusajs/b2b-starter-medusa/wiki).
 
 #### Core features
