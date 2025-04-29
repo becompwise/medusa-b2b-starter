@@ -71,13 +71,14 @@ export const removeAuthToken = async () => {
 
 export const getCartId = async () => {
   const cookies = await nextCookies()
-
   return cookies.get("_medusa_cart_id")?.value
 }
 
 export const setCartId = async (cartId: string) => {
+  if (!cartId) {
+    return
+  }
   const cookies = await nextCookies()
-
   cookies.set("_medusa_cart_id", cartId, {
     maxAge: 60 * 60 * 24 * 7,
     httpOnly: true,

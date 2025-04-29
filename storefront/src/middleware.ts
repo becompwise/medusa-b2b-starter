@@ -129,6 +129,35 @@ export async function middleware(request: NextRequest) {
   const urlHasCountryCode =
     countryCode && request.nextUrl.pathname.split("/")[1].includes(countryCode)
 
+  // 4) Protect routes for authenticated users
+  // Attempt to read JWT from Authorization header or 'token' cookie
+  const url = request.nextUrl.clone()
+  const pathname = url.pathname
+  const token = request.cookies.get("_medusa_jwt")?.value
+
+  console.log("### middleware - token:   ", token)
+
+  const protectedPatterns = [
+    "/cart",
+    "/checkout",
+    `/${countryCode}/store`,
+    `/${countryCode}/categories`,
+    `/${countryCode}/products`,
+  ]
+
+  for (const pattern of protectedPatterns) {
+    if (pathname.startsWith(pattern)) {
+      if (!token) {
+        const loginUrl = new URL(`/${countryCode}/account`, request.url)
+        loginUrl.searchParams.set(
+          "callbackUrl",
+          `${pathname}${request.nextUrl.search}`
+        )
+        return NextResponse.redirect(loginUrl)
+      }
+      break
+    }
+  }
   // check if one of the country codes is in the url
   if (urlHasCountryCode && (!cartId || cartIdCookie) && cacheIdCookie) {
     return NextResponse.next()
