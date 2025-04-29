@@ -2,8 +2,8 @@
 
 import { sdk } from "@/lib/config"
 import medusaError from "@/lib/util/medusa-error"
-import { B2BCustomer } from "@/types/global"
-import { HttpTypes } from "@medusajs/types"
+import { B2BCart, B2BCustomer } from "@/types/global"
+import { CartDTO, HttpTypes } from "@medusajs/types"
 import { track } from "@vercel/analytics/server"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
@@ -17,33 +17,92 @@ import {
   removeAuthToken,
   removeCartId,
   setAuthToken,
+  setCartId,
 } from "./cookies"
 
-export const retrieveCustomer = async (): Promise<B2BCustomer | null> => {
+export const retrieveCustomerCart = async (
+  bearerToken: string
+): Promise<any> => {
+  // console.log("### bearerToken", bearerToken)
+  // 1️⃣  Auth check
   const authHeaders = await getAuthHeaders()
-
-  if (!authHeaders) return null
-
-  const headers = {
-    ...authHeaders,
+  if (!authHeaders) {
+    return null
   }
 
-  const next = {
-    ...(await getCacheOptions("customers")),
-  }
-
-  return await sdk.client
-    .fetch<{ customer: B2BCustomer }>(`/store/customers/me`, {
+  // 2️⃣  Fetch the customer record
+  let customer: B2BCustomer
+  try {
+    const next = await getCacheOptions("customers")
+    const { customer: fetched } = await sdk.client.fetch<{
+      customer: B2BCustomer
+    }>(`/store/customers/me`, {
       method: "GET",
-      query: {
-        fields: "*employee, *orders",
-      },
-      headers,
+      query: { fields: "*employee,*orders" },
+      headers: authHeaders,
       next,
       cache: "force-cache",
     })
-    .then(({ customer }) => customer as B2BCustomer)
-    .catch(() => null)
+    customer = fetched
+  } catch {
+    return null
+  }
+
+  // 3️⃣  Fetch the customer’s cart array
+  let cart: B2BCart = {} as any
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/customers/${customer.id}/cart`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-publishable-api-key":
+            process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+          Authorization: `Bearer ${bearerToken}`, // use passed-in token
+        },
+      }
+    )
+
+    const json = await res.json()
+    if (!res.ok) {
+      throw new Error(json.message || `HTTP ${res.status}`)
+    }
+    cart = json.cart ?? ({} as B2BCart)
+    console.log("### fetchCustomerCart_cart", cart)
+  } catch {
+    // no carts or fetch error → leave carts=[]
+  }
+
+  return { customer, customer_cart: cart }
+}
+
+export const retrieveCustomer = async (): Promise<B2BCustomer | null> => {
+  // 1️⃣  Auth check
+  const authHeaders = await getAuthHeaders()
+  if (!authHeaders) {
+    return null
+  }
+
+  // 2️⃣  Fetch the customer record
+  let customer: B2BCustomer
+  try {
+    const next = await getCacheOptions("customers")
+    const { customer: fetched } = await sdk.client.fetch<{
+      customer: B2BCustomer
+    }>(`/store/customers/me`, {
+      method: "GET",
+      query: { fields: "*employee,*orders" },
+      headers: authHeaders,
+      next,
+      cache: "force-cache",
+    })
+    customer = fetched
+  } catch {
+    return null
+  }
+
+  return customer
 }
 
 export const updateCustomer = async (body: HttpTypes.StoreUpdateCustomer) => {
@@ -152,8 +211,13 @@ export async function login(_currentState: unknown, formData: FormData) {
 
         revalidateTag(customerCacheTag)
 
-        const customer = await retrieveCustomer()
-        const cart = await retrieveCart()
+        const { customer, customer_cart } = (await retrieveCustomerCart(
+          token as string
+        )) as any
+        console.log("### customer_cart", await customer_cart)
+        setCartId(await customer_cart?.id)
+        console.log("### login-customer.cart", await customer_cart)
+        const cart = (await retrieveCart(customer_cart?.id)) as any
 
         if (customer?.employee?.company_id) {
           await updateCart({
@@ -306,3 +370,40 @@ export const updateCustomerAddress = async (
       return { success: false, error: err.toString() }
     })
 }
+
+// // // // File: storefront/src/lib/data/customerCart.ts
+
+// // // /**
+// // //  * Fetches the active cart for a given customer from the Medusa Store API.
+// // //  *
+// // //  * @param customerId - The ID of the customer whose active cart you want to retrieve.
+// // //  * @returns The current cart object.
+// // //  */
+// // // export async function fetchCustomerCart(
+// // //   customerId: string,
+// // //   bearerToken: string
+// // // ): Promise<B2BCart> {
+// // //   console.log("fetchCustomerCart_customerId", customerId)
+
+// // //   const res = await fetch(
+// // //     `${process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL}/store/customers/${customerId}/cart`,
+// // //     {
+// // //       method: "GET",
+// // //       headers: {
+// // //         "Content-Type": "application/json",
+// // //         "x-publishable-api-key":
+// // //           process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY!,
+// // //         Authorization: `Bearer ${bearerToken}`, // use passed-in token
+// // //       },
+// // //     }
+// // //   )
+
+// // //   const json = await res.json()
+// // //   if (!res.ok) {
+// // //     throw new Error(json.message || `HTTP ${res.status}`)
+// // //   }
+
+// // //   console.log("fetchCustomerCart_cart", (json.cart ?? {}) as B2BCart)
+// // //   // **Pull out the array** and return it
+// // //   return json.cart as B2BCart
+// // // }
