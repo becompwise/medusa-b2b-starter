@@ -1,5 +1,9 @@
 /dist
 .env
+.env.development
+.env.production
+.env.template
+.env.test
 .DS_Store
 /uploads
 /node_modules
