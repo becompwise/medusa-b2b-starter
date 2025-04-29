@@ -69,7 +69,7 @@ export const retrieveCustomerCart = async (
       throw new Error(json.message || `HTTP ${res.status}`)
     }
     cart = json.cart ?? ({} as B2BCart)
-    console.log("### fetchCustomerCart_cart", cart)
+    // console.log("### fetchCustomerCart_cart", cart)
   } catch {
     // no carts or fetch error → leave carts=[]
   }
@@ -214,9 +214,7 @@ export async function login(_currentState: unknown, formData: FormData) {
         const { customer, customer_cart } = (await retrieveCustomerCart(
           token as string
         )) as any
-        console.log("### customer_cart", await customer_cart)
         setCartId(await customer_cart?.id)
-        console.log("### login-customer.cart", await customer_cart)
         const cart = (await retrieveCart(customer_cart?.id)) as any
 
         if (customer?.employee?.company_id) {
