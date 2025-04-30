@@ -11,14 +11,17 @@ const StoreTemplate = ({
   page,
   countryCode,
   categories,
+  searchBy,
 }: {
   sortBy?: SortOptions
   page?: string
   countryCode: string
   categories?: HttpTypes.StoreProductCategory[]
+  searchBy?: string
 }) => {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
+  const search = searchBy || ""
 
   return (
     <div className="bg-neutral-100">
@@ -28,13 +31,18 @@ const StoreTemplate = ({
       >
         <StoreBreadcrumb />
         <div className="flex flex-col small:flex-row small:items-start gap-3">
-          <RefinementList sortBy={sort} categories={categories} />
+          <RefinementList
+            sortBy={sort}
+            categories={categories}
+            searchBy={searchBy}
+          />
           <div className="w-full">
             <Suspense fallback={<SkeletonProductGrid />}>
               <PaginatedProducts
                 sortBy={sort}
                 page={pageNumber}
                 countryCode={countryCode}
+                searchBy={searchBy}
               />
             </Suspense>
           </div>

@@ -12,6 +12,9 @@ import SkeletonAccountButton from "@/modules/skeletons/components/skeleton-accou
 import SkeletonCartButton from "@/modules/skeletons/components/skeleton-cart-button"
 import SkeletonMegaMenu from "@/modules/skeletons/components/skeleton-mega-menu"
 import { Suspense } from "react"
+import { useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import SearchProduct from "@/modules/products/components/search-products"
 
 export async function NavigationHeader() {
   const customer = await retrieveCustomer().catch(() => null)
@@ -43,7 +46,7 @@ export async function NavigationHeader() {
             </nav>
           </div>
           <div className="flex justify-end items-center gap-2">
-            <div className="relative mr-2 hidden small:inline-flex">
+            {/* <div className="relative mr-2 hidden small:inline-flex">
               <input
                 disabled
                 type="text"
@@ -51,7 +54,9 @@ export async function NavigationHeader() {
                 className="bg-gray-100 text-zinc-900 px-4 py-2 rounded-full pr-10 shadow-borders-base hidden small:inline-block hover:cursor-not-allowed"
                 title="Install a search provider to enable product search"
               />
-            </div>
+            </div> */}
+
+            <SearchProduct />
 
             <div className="h-4 w-px bg-neutral-300" />
 

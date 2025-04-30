@@ -15,6 +15,7 @@ type RefinementListProps = {
   "data-testid"?: string
   categories?: HttpTypes.StoreProductCategory[]
   currentCategory?: HttpTypes.StoreProductCategory
+  searchBy?: string
 }
 
 const RefinementList = ({
@@ -23,6 +24,7 @@ const RefinementList = ({
   "data-testid": dataTestId,
   categories,
   currentCategory,
+  searchBy,
 }: RefinementListProps) => {
   const router = useRouter()
   const pathname = usePathname()
