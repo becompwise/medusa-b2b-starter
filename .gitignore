@@ -54,3 +54,10 @@ yarn-error.log*
 ehthumbs.db
 Thumbs.db
 **/.DS_Store
+storefront/.env.development
+.gitignore
+storefront/.env.developmentZone.Identifier
+.gitignore
+backend/src/scripts/seed.tsZone.Identifier
+.gitignore
+storefront/.env.production
