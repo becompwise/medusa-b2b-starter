@@ -33,7 +33,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     },
     { throwIfKeyNotFound: false }
   );
-  console.log('backend_carts', carts);
+  // console.log('backend_carts', carts);
   const cart = carts[0];
   if (!cart) {
     return res
