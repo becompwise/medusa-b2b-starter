@@ -18,17 +18,22 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const { data: carts } = await queryService.graph(
     {
       entity: 'cart',
-      fields: 'id, customer_id, created_at, updated_at',
+      fields: ['id', 'created_at'], // '*',
       filters: {
         // Cast to any to avoid TS mismatches
         customer_id: customerId as any,
         completed_at: null as any,
         deleted_at: null as any,
       } as any,
+      pagination: {
+        skip: 0, // start at the beginning
+        take: 1, // only one record :contentReference[oaicite:4]{index=4}
+        order: { created_at: 'DESC' }, // newest first :contentReference[oaicite:5]{index=5}
+      },
     },
     { throwIfKeyNotFound: false }
   );
-  // console.log('backend_carts', carts);
+  console.log('backend_carts', carts);
   const cart = carts[0];
   if (!cart) {
     return res

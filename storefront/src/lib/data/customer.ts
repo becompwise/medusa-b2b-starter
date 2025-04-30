@@ -47,6 +47,7 @@ export const retrieveCustomerCart = async (
   } catch {
     return null
   }
+  // console.log("### retrieveCustomerCart-customer", customer)
 
   // 3️⃣  Fetch the customer’s cart array
   let cart: B2BCart = {} as any
@@ -69,7 +70,7 @@ export const retrieveCustomerCart = async (
       throw new Error(json.message || `HTTP ${res.status}`)
     }
     cart = json.cart ?? ({} as B2BCart)
-    // console.log("### fetchCustomerCart_cart", cart)
+    // console.log("### retrieveCustomerCart-cart", cart)
   } catch {
     // no carts or fetch error → leave carts=[]
   }
