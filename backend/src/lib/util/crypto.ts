@@ -39,21 +39,20 @@ export function encrypt(text: string): string {
  * Decrypt "ivHex:cipherHex" back to plaintext.
  */
 export function decrypt(enc: string): string {
-  const [ivHex, cipherHex] = enc.split(':');
-  const iv = Buffer.from(ivHex, 'hex');
-  // @ts-ignore: treat Buffer as valid input
-  const encryptedData = Buffer.from(cipherHex, 'hex');
+  try {
+    const [ivHex, cipherHex] = enc.split(':');
+    console.log('decrypt()', { ivHex, cipherHex });
 
-  // @ts-ignore: bypass TS type checks for Buffer key and IV
-  const decipher = createDecipheriv(ALGORITHM, KEY, iv);
+    const iv = Buffer.from(ivHex, 'hex');
+    const cipher = Buffer.from(cipherHex, 'hex');
 
-  // @ts-ignore: allow Buffer result from update
-  const decryptedPart1 = decipher.update(encryptedData);
-  // @ts-ignore: allow Buffer result from final
-  const decryptedPart2 = decipher.final();
+    const decipher = createDecipheriv(ALGORITHM, KEY, iv);
+    const dec1 = decipher.update(cipher);
+    const dec2 = decipher.final();
 
-  // @ts-ignore: bypass TS concat signature
-  const decrypted = Buffer.concat([decryptedPart1, decryptedPart2]);
-
-  return decrypted.toString('utf8');
+    return Buffer.concat([dec1, dec2]).toString('utf8');
+  } catch (e) {
+    console.error('decrypt error', e);
+    return '';
+  }
 }

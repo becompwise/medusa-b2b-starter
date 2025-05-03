@@ -108,7 +108,7 @@ const PaymentCcForm = ({
   /* helper to show masked number if already saved */
   /* helper for masked view */
   const masked = `•••• ${initialMeta?.last4digit ?? form.card_number.slice(-4)}`
-  console.log("masked", masked)
+  // console.log("masked", masked)
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
