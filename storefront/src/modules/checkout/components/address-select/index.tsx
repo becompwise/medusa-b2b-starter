@@ -20,19 +20,31 @@ const AddressSelect = ({
   addressInput,
   onSelect,
 }: AddressSelectProps) => {
-  const handleSelect = (id: string) => {
-    const savedAddress = addresses.find((a) => a.id === id)
-    if (savedAddress) {
-      onSelect(savedAddress as HttpTypes.StoreCartAddress)
-    }
-  }
-
+  /* 1  Find match (may be undefined) */
   const selectedAddress = useMemo(() => {
     return addresses.find((a) => compareAddresses(a, addressInput))
   }, [addresses, addressInput])
 
+  /* 2  If no saved addresses, show notice */
+  if (!addresses.length) {
+    return (
+      <p className="text-sm text-gray-500">
+        No saved addresses available. Please add one.
+      </p>
+    )
+  }
+
+  /* 3  Ensure Listbox gets a **defined** value */
+  /* make value a string from the very first render */
+  const selectedId = selectedAddress?.id ?? addresses[0].id ?? ""
+
+  const handleSelect = (id: string) => {
+    const saved = addresses.find((a) => a.id === id)
+    onSelect(saved as HttpTypes.StoreCartAddress)
+  }
+
   return (
-    <Listbox onChange={handleSelect} value={selectedAddress?.id}>
+    <Listbox onChange={handleSelect} value={selectedId}>
       <div className="relative">
         <Listbox.Button
           className="relative w-full flex justify-between items-center px-4 py-[10px] text-left bg-white cursor-default focus:outline-none border rounded-rounded focus-visible:ring-2 focus-visible:ring-opacity-75 focus-visible:ring-white focus-visible:ring-offset-gray-300 focus-visible:ring-offset-2 focus-visible:border-gray-300 text-base-regular"
@@ -73,7 +85,7 @@ const AddressSelect = ({
                 >
                   <div className="flex gap-x-4 items-start">
                     <Radio
-                      checked={selectedAddress?.id === address.id}
+                      checked={selectedId === address.id}
                       data-testid="shipping-address-radio"
                     />
                     <div className="flex flex-col">
