@@ -13,5 +13,12 @@ export const config: MiddlewaresConfig = {
         authenticate('customer', ['bearer', 'session']), // require a logged-in customer
       ],
     },
+    // {
+    //   method: ['POST'], // HTTP verb(s)
+    //   matcher: '/store/customers/:id/cart/save-cc', // the exact path
+    //   middlewares: [
+    //     authenticate('customer', ['bearer', 'session']), // require a logged-in customer
+    //   ],
+    // },
   ],
 };

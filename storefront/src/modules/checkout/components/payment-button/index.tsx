@@ -349,6 +349,7 @@ const ManualTestPaymentButton = ({
 }) => {
   const [submitting, setSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const metaMissing = !cart.metadata?.enc_number
 
   const onPaymentCompleted = async () => {
     await completeCart(cart)
@@ -370,7 +371,7 @@ const ManualTestPaymentButton = ({
     <>
       <Button
         className="w-full"
-        disabled={notReady}
+        disabled={notReady || metaMissing}
         isLoading={submitting}
         onClick={handlePayment}
         size="large"

@@ -1,3 +1,4 @@
+// src/modules/checkout/components/payment/index.tsx
 "use client"
 
 import { isStripe as isStripeFunc, paymentInfoMap } from "@/lib/constants"
@@ -15,6 +16,7 @@ import { CardElement } from "@stripe/react-stripe-js"
 import { StripeCardElementOptions } from "@stripe/stripe-js"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useContext, useEffect, useMemo, useState } from "react"
+import PaymentCcForm from "@/modules/checkout/components/payment-cc-form"
 
 const Payment = ({
   cart,
@@ -34,6 +36,19 @@ const Payment = ({
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
     activeSession?.provider_id ?? ""
   )
+
+  /* metadata present? (enc_number ≠ null) */
+  const savedMeta = cart.metadata?.enc_number
+    ? {
+        cardholder: cart.metadata.cardholder,
+        last4digit: cart.metadata.last4digit,
+        expiry_month: cart.metadata.expiry_month,
+        expiry_year: cart.metadata.expiry_year,
+      }
+    : null
+
+  /* If meta already saved, mark form complete from the start */
+  useEffect(() => setCardComplete(!!savedMeta), [savedMeta])
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -87,8 +102,16 @@ const Payment = ({
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
+      const isManualCC = selectedPaymentMethod === "pp_manual-credit-card_cc"
+
       const shouldInputCard =
-        isStripeFunc(selectedPaymentMethod) && !activeSession
+        (isStripeFunc(selectedPaymentMethod) && !activeSession) ||
+        (isManualCC && !cardComplete)
+
+      console.log(" *** shouldInputCard", shouldInputCard)
+      console.log(" *** activeSession.provider_id", activeSession.provider_id)
+      console.log(" *** isManualCC", isManualCC)
+      console.log(" *** cardComplete", cardComplete)
 
       if (
         !activeSession ||
@@ -171,6 +194,17 @@ const Payment = ({
                     )
                   })}
               </RadioGroup>
+              {selectedPaymentMethod === "pp_manual-credit-card_cc" && (
+                <div className="mt-5">
+                  <PaymentCcForm
+                    cartId={cart.id}
+                    initialMeta={savedMeta}
+                    setError={setError}
+                    setCardComplete={setCardComplete}
+                    error={error}
+                  />
+                </div>
+              )}
               {stripeReady && selectedPaymentMethod === "pp_stripe_stripe" && (
                 <div className="mt-5 transition-all duration-150 ease-in-out">
                   <Text className="txt-medium-plus text-ui-fg-base mb-1">
@@ -218,7 +252,9 @@ const Payment = ({
               disabled={
                 (selectedPaymentMethod === "pp_stripe_stripe" &&
                   !cardComplete) ||
-                (!selectedPaymentMethod && !paidByGiftcard)
+                (!selectedPaymentMethod && !paidByGiftcard) ||
+                (selectedPaymentMethod === "pp_manual-credit-card_cc" &&
+                  !cardComplete)
               }
               data-testid="submit-payment-button"
             >

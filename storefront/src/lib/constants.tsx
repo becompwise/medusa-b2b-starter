@@ -31,6 +31,10 @@ export const paymentInfoMap: Record<
     icon: <FilePlus />,
   },
   // Add more payment providers here
+  "pp_manual-credit-card_cc": {
+    title: "Credit Card",
+    icon: <CreditCard />,
+  },
 }
 
 // This only checks if it is native stripe for card payments, it ignores the other stripe-based providers
@@ -41,7 +45,10 @@ export const isPaypal = (providerId?: string) => {
   return providerId?.startsWith("pp_paypal")
 }
 export const isManual = (providerId?: string) => {
-  return providerId?.startsWith("pp_system_default")
+  return (
+    providerId?.startsWith("pp_system_default") ||
+    providerId?.startsWith("pp_manual")
+  )
 }
 
 export const currencySymbolMap: Record<string, string> = {
