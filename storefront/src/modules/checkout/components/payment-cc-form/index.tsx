@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { saveCc } from "@/lib/data/cc"
 import { useCart } from "@/lib/context/cart-context"
 import Button from "@/modules/common/components/button"
+import { digitsOnly, fourSplit } from "@/lib/util/format-card"
 
 interface Meta {
   cardholder: string
@@ -34,7 +35,8 @@ const PaymentCcForm = ({
   // /* if meta exists, pre‑fill, else empty */
   // const [form, setForm] = useState({
   //   cardholder: initialMeta?.cardholder ?? "",
-  //   card_number: "", // never show full PAN
+  //   card_number: "", // raw digits (13–19)
+  // card_display: "",      // formatted "#### #### …"
   //   expiry_month: initialMeta?.expiry_month?.toString() ?? "",
   //   expiry_year: initialMeta?.expiry_year?.toString() ?? "",
   //   cvc: "",
@@ -43,12 +45,14 @@ const PaymentCcForm = ({
   const [form, setForm] = useState({
     cardholder: "test park",
     card_number: "4242424242424242",
+    card_display: "#### #### #### ####",
     expiry_month: "10",
     expiry_year: "2025",
     cvc: "111",
   })
 
   const [saving, setSaving] = useState(false)
+  const [locked, setLocked] = useState(!!initialMeta) // ← new flag
   const [saved, setSaved] = useState(!!initialMeta)
 
   /* recompute completeness */
@@ -64,11 +68,20 @@ const PaymentCcForm = ({
   }, [form, saved, setCardComplete])
 
   /* any manual edit means card needs saving again */
+  /* onChange */
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSaved(false)
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    if (name === "card_number" || name === "card_display") {
+      const raw = digitsOnly(value)
+      const disp = fourSplit(raw)
+      setForm((f) => ({ ...f, card_number: raw, card_display: disp }))
+      setLocked(false)
+    } else {
+      setForm((f) => ({ ...f, [name]: value }))
+    }
+    setSaved(false) // card must be re‑saved
   }
-
+  /* onSubmit unchanged except for setLocked(true) after save */
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -82,6 +95,7 @@ const PaymentCcForm = ({
       })
       // success – parent will let checkout continue
       setSaved(true)
+      setLocked(true)
       /* clear PAN & CVC after save */
       setForm((f) => ({ ...f, card_number: "", cvc: "" }))
     } catch (err: any) {
@@ -92,9 +106,9 @@ const PaymentCcForm = ({
   }
 
   /* helper to show masked number if already saved */
-  const maskedNumber = initialMeta
-    ? `•••• ${initialMeta.last4digit}`
-    : form.card_number
+  /* helper for masked view */
+  const masked = `•••• ${initialMeta?.last4digit ?? form.card_number.slice(-4)}`
+  console.log("masked", masked)
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -123,44 +137,39 @@ const PaymentCcForm = ({
         >
           Card Number
         </label>
-        {/* <input
-          id="card_number"
-          name="card_number"
-          type="tel"
-          inputMode="numeric"
-          pattern="\d{13,16}"
-          required={!saved}
-          disabled={saved}
-          placeholder="1234 5678 9012 3456"
-          className="mt-1 block w-full p-2 border rounded-md"
-          value={maskedNumber}
-          onChange={onChange}
-        /> */}
         {/* Card‑number field */}
-        {saved ? (
+        {locked ? (
           /* ----- read‑only masked display ----- */
-          <input
-            type="text"
-            value={`•••• ${initialMeta!.last4digit}`}
-            disabled // no validation fires
-            className="mt-1 block w-full p-2 border rounded-md"
-            onDoubleClick={() => {
-              // double‑click to edit
-              setSaved(false) // switch to editable mode
-              setForm((f) => ({ ...f, card_number: "" }))
-            }}
-          />
+          <div className="relative">
+            <input
+              type="text"
+              value={masked} // "•••• 1111"
+              disabled
+              className="mt-1 block w-full p-2 border rounded-md text-gray-500"
+            />
+            {/* Edit link – top‑right inside the input */}
+            <button
+              type="button"
+              onClick={() => setLocked(false)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-xs text-blue-600 hover:underline"
+            >
+              Edit
+            </button>
+          </div>
         ) : (
           /* ----- editable numeric field ----- */
           <input
+            id="card_number"
             name="card_number"
-            placeholder="Card #"
-            value={form.card_number}
-            onChange={onChange}
+            type="tel"
+            inputMode="numeric"
+            /* accept digits or spaces, min 13 digits, max 19 digits + 3 spaces */
+            maxLength={23} // 16 digits + 3 spaces
+            placeholder="1234 5678 9012 3456"
             required
-            pattern="\d{13,16}"
             className="mt-1 block w-full p-2 border rounded-md"
-            autoFocus // focus after unlocking
+            value={form.card_display}
+            onChange={onChange}
           />
         )}
       </div>
@@ -210,26 +219,41 @@ const PaymentCcForm = ({
           >
             CVC
           </label>
-          <input
-            id="cvc"
-            name="cvc"
-            type="tel"
-            pattern="\d{3,4}"
-            required={!saved}
-            disabled={saved}
-            placeholder="CVC"
-            className="mt-1 block w-full p-2 border rounded-md"
-            value={form.cvc}
-            onChange={onChange}
-          />
+          {/* CVC field */}
+          {saved ? (
+            /* masked display */
+            <input
+              type="password" // shows ••• automatically
+              value="123" // any 3–4 chars → renders •••
+              disabled
+              className="mt-1 block w-full p-2 border rounded-md text-gray-500"
+              onDoubleClick={() => {
+                setSaved(false) // unlock editing
+                setForm((f) => ({ ...f, cvc: "" }))
+              }}
+            />
+          ) : (
+            /* editable field */
+            <input
+              id="cvc"
+              name="cvc"
+              type="tel"
+              pattern="\d{3,4}"
+              required={!saved}
+              disabled={saved}
+              placeholder="CVC"
+              className="mt-1 block w-full p-2 border rounded-md"
+              value={form.cvc}
+              onChange={onChange}
+            />
+          )}
         </div>
       </div>
       {/* messages */}
       {error && <p className="text-red-500">{error}</p>}
       {saved && !error && (
         <p className="text-green-600">
-          Card ending in {initialMeta?.last4digit || form.card_number.slice(-4)}{" "}
-          saved
+          Card ending in {masked.slice(-4)} saved
         </p>
       )}
       {/* show button only when card needs saving */}

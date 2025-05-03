@@ -11,7 +11,7 @@ export const paymentInfoMap: Record<
   { title: string; icon: React.JSX.Element }
 > = {
   pp_stripe_stripe: {
-    title: "Credit card",
+    title: "Credit card (Stripe)",
     icon: <CreditCard />,
   },
   "pp_stripe-ideal_stripe": {
@@ -27,14 +27,12 @@ export const paymentInfoMap: Record<
     icon: <PayPal />,
   },
   pp_system_default: {
-    title: "Pay by invoice",
-    icon: <FilePlus />,
+    title: "Credit Card (Default)",
+    icon: <CreditCard />,
+    // title: "Pay by invoice",
+    // icon: <FilePlus />,
   },
   // Add more payment providers here
-  "pp_manual-credit-card_cc": {
-    title: "Credit Card",
-    icon: <CreditCard />,
-  },
 }
 
 // This only checks if it is native stripe for card payments, it ignores the other stripe-based providers

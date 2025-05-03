@@ -33,9 +33,34 @@ const Payment = ({
   const [error, setError] = useState<string | null>(null)
   const [cardBrand, setCardBrand] = useState<string | null>(null)
   const [cardComplete, setCardComplete] = useState(false)
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
-    activeSession?.provider_id ?? ""
-  )
+
+  // const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(
+  //   activeSession?.provider_id ?? ""
+  // )
+
+  const DEFAULT_UI_ID = "pp_system_default"
+
+  const initialProvider =
+    activeSession?.provider_id ??
+    (availablePaymentMethods.some((m) => m.id === DEFAULT_UI_ID)
+      ? DEFAULT_UI_ID
+      : availablePaymentMethods[0]?.id ?? "")
+
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState(initialProvider)
+
+  // keep it valid if methods change (optional)
+  useEffect(() => {
+    if (!availablePaymentMethods.find((m) => m.id === selectedPaymentMethod)) {
+      const fallback = availablePaymentMethods.some(
+        (m) => m.id === DEFAULT_UI_ID
+      )
+        ? DEFAULT_UI_ID // ← if TRUE
+        : availablePaymentMethods[0]?.id ?? "" // ← if FALSE
+
+      setSelectedPaymentMethod(fallback)
+    }
+  }, [availablePaymentMethods, selectedPaymentMethod])
 
   /* metadata present? (enc_number ≠ null) */
   const savedMeta = cart.metadata?.enc_number
@@ -102,16 +127,11 @@ const Payment = ({
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
-      const isManualCC = selectedPaymentMethod === "pp_manual-credit-card_cc"
+      const isManualCC = selectedPaymentMethod === "pp_system_default"
 
       const shouldInputCard =
         (isStripeFunc(selectedPaymentMethod) && !activeSession) ||
         (isManualCC && !cardComplete)
-
-      console.log(" *** shouldInputCard", shouldInputCard)
-      console.log(" *** activeSession.provider_id", activeSession.provider_id)
-      console.log(" *** isManualCC", isManualCC)
-      console.log(" *** cardComplete", cardComplete)
 
       if (
         !activeSession ||
@@ -194,7 +214,7 @@ const Payment = ({
                     )
                   })}
               </RadioGroup>
-              {selectedPaymentMethod === "pp_manual-credit-card_cc" && (
+              {selectedPaymentMethod === "pp_system_default" && (
                 <div className="mt-5">
                   <PaymentCcForm
                     cartId={cart.id}
@@ -253,8 +273,7 @@ const Payment = ({
                 (selectedPaymentMethod === "pp_stripe_stripe" &&
                   !cardComplete) ||
                 (!selectedPaymentMethod && !paidByGiftcard) ||
-                (selectedPaymentMethod === "pp_manual-credit-card_cc" &&
-                  !cardComplete)
+                (selectedPaymentMethod === "pp_system_default" && !cardComplete)
               }
               data-testid="submit-payment-button"
             >
