@@ -1,7 +1,11 @@
 import { QUOTE_MODULE } from './src/modules/quote';
 import { APPROVAL_MODULE } from './src/modules/approval';
 import { COMPANY_MODULE } from './src/modules/company';
+import { BRAND_MODULE } from './src/modules/brand';
+import { PRODUCT_PACK_MODULE } from './src/modules/product-pack';
 import { loadEnv, defineConfig, Modules } from '@medusajs/framework/utils';
+
+// import './src/subscribers/sync-variant-price'; // 👈 executes the subscribe code
 
 loadEnv(process.env.NODE_ENV!, process.cwd());
 
@@ -17,6 +21,13 @@ module.exports = defineConfig({
     },
   },
   modules: {
+    /* Existing custom modules */
+    [PRODUCT_PACK_MODULE]: {
+      resolve: './modules/product-pack',
+    },
+    [BRAND_MODULE]: {
+      resolve: './modules/brand',
+    },
     [COMPANY_MODULE]: {
       resolve: './modules/company',
     },
@@ -26,12 +37,14 @@ module.exports = defineConfig({
     [APPROVAL_MODULE]: {
       resolve: './modules/approval',
     },
+
     [Modules.CACHE]: {
       resolve: '@medusajs/medusa/cache-inmemory',
     },
     [Modules.WORKFLOW_ENGINE]: {
       resolve: '@medusajs/medusa/workflow-engine-inmemory',
     },
+
     [Modules.PAYMENT]: {
       resolve: '@medusajs/medusa/payment',
       options: {

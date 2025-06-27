@@ -23,10 +23,11 @@ import {
 export const retrieveCustomerCart = async (
   bearerToken: string
 ): Promise<any> => {
-  // console.log("### bearerToken", bearerToken)
+  console.log("### bearerToken", bearerToken)
   // 1️⃣  Auth check
   const authHeaders = await getAuthHeaders()
   if (!authHeaders) {
+    console.error("### retrieveCustomerCart: no authHeaders")
     return null
   }
 
@@ -44,10 +45,11 @@ export const retrieveCustomerCart = async (
       cache: "force-cache",
     })
     customer = fetched
-  } catch {
+  } catch (err: any) {
+    console.error("### retrieveCustomerCart: error fetching customer →", err)
     return null
   }
-  // console.log("### retrieveCustomerCart-customer", customer)
+  console.log("### retrieveCustomerCart-customer", customer)
 
   // 3️⃣  Fetch the customer’s cart array
   let cart: B2BCart = {} as any
@@ -70,7 +72,7 @@ export const retrieveCustomerCart = async (
       throw new Error(json.message || `HTTP ${res.status}`)
     }
     cart = json.cart ?? ({} as B2BCart)
-    // console.log("### retrieveCustomerCart-cart", cart)
+    console.log("### retrieveCustomerCart-cart", cart)
   } catch {
     // no carts or fetch error → leave carts=[]
   }
@@ -193,6 +195,7 @@ export async function signup(_currentState: unknown, formData: FormData) {
 }
 
 export async function login(_currentState: unknown, formData: FormData) {
+  console.log("🔍 login payload:", Object.fromEntries(formData.entries()))
   const email = formData.get("email") as string
   const password = formData.get("password") as string
 
@@ -212,9 +215,28 @@ export async function login(_currentState: unknown, formData: FormData) {
 
         revalidateTag(customerCacheTag)
 
-        const { customer, customer_cart } = (await retrieveCustomerCart(
-          token as string
-        )) as any
+        //
+
+        // const { customer, customer_cart } = (await retrieveCustomerCart(
+        //   token as string
+        // )) as any
+
+        let customerData: { customer: any; customer_cart: any } | null = null
+        try {
+          customerData = await retrieveCustomerCart(token as string)
+          if (!customerData) {
+            throw new Error("retrieveCustomerCart() returned null")
+          }
+          console.log("✅ retrieveCustomerCart:", customerData)
+        } catch (err: any) {
+          console.error("❌ retrieveCustomerCart failed:", err)
+          throw err
+        }
+
+        // At this point you know `customerData` is non-null:
+        const { customer, customer_cart } = customerData
+
+        //
         setCartId(await customer_cart?.id)
         const cart = (await retrieveCart(customer_cart?.id)) as any
 
